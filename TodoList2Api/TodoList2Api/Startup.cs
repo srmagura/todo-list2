@@ -4,13 +4,15 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
+[assembly: FunctionsStartup(typeof(TodoList2Api.Startup))]
+
 namespace TodoList2Api
 {
     public class Startup : FunctionsStartup
     {
         public override void Configure(IFunctionsHostBuilder builder)
         {
-            builder.Services.AddScoped<ITodoRepository, SqlTodoRepository>();
+            builder.Services.AddTransient<ITodoRepository, SqlTodoRepository>();
         }
     }
 }

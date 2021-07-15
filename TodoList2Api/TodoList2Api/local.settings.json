@@ -1,0 +1,8 @@
+{
+    "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "Database": "Server=localhost;Database=TodoList2;Trusted_Connection=True;Connection Timeout=180;MultipleActiveResultSets=True;",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet"
+  }
+}

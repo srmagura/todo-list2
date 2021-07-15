@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
@@ -28,13 +30,12 @@ namespace TodoList2Api
         }
 
         [FunctionName("Add")]
-        [OpenApiOperation(operationId: "Run")]
+        [OpenApiOperation(operationId: "Add")]
         [OpenApiSecurity("function_key", SecuritySchemeType.ApiKey, Name = "APIKEY", In = OpenApiSecurityLocationType.Header)]
-        [OpenApiParameter(name: "label", In = ParameterLocation.Query, Required = true, Type = typeof(string), Description = "The label for the todo.")]
+        [OpenApiRequestBody("application/json", typeof(AddRequestBody))]
         [OpenApiResponseWithoutBody(statusCode: HttpStatusCode.OK)]
-        public async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Function, "post", Route = null)] HttpRequest req,
-            ILogger log)
+        public async Task<IActionResult> Add(
+            [HttpTrigger(AuthorizationLevel.Function, "post", Route = null)] HttpRequest req)
         {
             using var streamReader = new StreamReader(req.Body);
             var requestBodyString = await streamReader.ReadToEndAsync();
@@ -49,10 +50,54 @@ namespace TodoList2Api
                 return new BadRequestResult();
             }
 
-            var todo = new Todo()
+            var todo = new Todo(false, requestBody.Label);
             await _todoRepo.AddAsync(todo);
 
             return new OkResult();
+        }
+
+        public class SetDoneRequestBody
+        {
+            public Guid Id { get; set; }
+            public bool Done { get; set; }
+        }
+
+        [FunctionName("SetDone")]
+        [OpenApiOperation(operationId: "SetDone")]
+        [OpenApiSecurity("function_key", SecuritySchemeType.ApiKey, Name = "APIKEY", In = OpenApiSecurityLocationType.Header)]
+        [OpenApiRequestBody("application/json", typeof(SetDoneRequestBody))]
+        [OpenApiResponseWithoutBody(statusCode: HttpStatusCode.OK)]
+        public async Task<IActionResult> SetDone(
+            [HttpTrigger(AuthorizationLevel.Function, "post", Route = null)] HttpRequest req)
+        {
+            using var streamReader = new StreamReader(req.Body);
+            var requestBodyString = await streamReader.ReadToEndAsync();
+            SetDoneRequestBody requestBody;
+
+            try
+            {
+                requestBody = JsonConvert.DeserializeObject<SetDoneRequestBody>(requestBodyString);
+            }
+            catch (JsonException)
+            {
+                return new BadRequestResult();
+            }
+
+            await _todoRepo.SetDoneAsync(requestBody.Id, requestBody.Done);
+
+            return new OkResult();
+        }
+
+        [FunctionName("List")]
+        [OpenApiOperation(operationId: "List")]
+        [OpenApiSecurity("function_key", SecuritySchemeType.ApiKey, Name = "APIKEY", In = OpenApiSecurityLocationType.Header)]
+        [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(List<Todo>))]
+        public async Task<IActionResult> List(
+            [HttpTrigger(AuthorizationLevel.Function, "get", Route = null)] HttpRequest req)
+        {
+            var list = await _todoRepo.ListAsync();
+
+            return new OkObjectResult(list);
         }
     }
 }

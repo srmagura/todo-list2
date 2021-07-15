@@ -21,15 +21,51 @@ namespace TodoList2Api
         {
             using var conn = await GetConnectionAsync();
 
-            var cmdText = "insert into Todos values (@done, @label)";
+            var cmdText = "insert into Todos values (@id, @done, @label)";
             using var cmd = new SqlCommand(cmdText, conn);
+            cmd.Parameters.AddWithValue("@id", todo.Id);
+            cmd.Parameters.AddWithValue("@done", 0);
+            cmd.Parameters.AddWithValue("@label", todo.Label);
 
             await cmd.ExecuteNonQueryAsync();
         }
 
-        public Task<List<Todo>> ListAsync()
+        public async Task SetDoneAsync(Guid id, bool done)
         {
-            throw new NotImplementedException();
+            using var conn = await GetConnectionAsync();
+
+            var cmdText = "update Todos set Done=@done where Id=@id";
+            using var cmd = new SqlCommand(cmdText, conn);
+            cmd.Parameters.AddWithValue("@done", done);
+            cmd.Parameters.AddWithValue("@id", id);
+
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+        public async Task<List<Todo>> ListAsync()
+        {
+            using var conn = await GetConnectionAsync();
+
+            var cmdText = "select * from Todos";
+            using var cmd = new SqlCommand(cmdText, conn);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+            var result = new List<Todo>();
+
+            while (await reader.ReadAsync())
+            {
+                var todo = new Todo(
+                    (bool)reader["Done"],
+                    (string)reader["Label"]
+                )
+                {
+                    Id = (Guid)reader["Id"]
+                };
+
+                result.Add(todo);
+            }
+
+            return result;
         }
     }
 }

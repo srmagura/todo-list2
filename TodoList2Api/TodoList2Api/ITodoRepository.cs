@@ -8,6 +8,7 @@ namespace TodoList2Api
     public interface ITodoRepository
     {
         Task AddAsync(Todo todo);
+        Task SetDoneAsync(Guid id, bool done);
         Task<List<Todo>> ListAsync();
     }
 }
